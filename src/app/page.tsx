@@ -1,65 +1,97 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { trpc } from "@/lib/trpc";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
+  const { data: posts, isLoading, error } = trpc.post.getAll.useQuery();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="space-y-8">
+      {/* Page heading */}
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight">Latest Posts</h1>
+        <p className="mt-2 text-muted-foreground">
+          Thoughts, ideas, and stories from the community.
+        </p>
+      </div>
+
+      <Separator />
+
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <p className="mt-4 text-sm">Loading posts...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6 text-center">
+          <p className="font-medium text-destructive">Failed to load posts</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Make sure your DATABASE_URL is set in .env and the database is
+            migrated.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      )}
+
+      {posts && posts.length === 0 && (
+        <div className="flex flex-col items-center py-20 text-center">
+          <p className="text-lg font-medium">No posts yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Be the first to{" "}
+            <Link
+              href="/new"
+              className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80">
+              write a post
+            </Link>
+            .
+          </p>
         </div>
-      </main>
+      )}
+
+      <div className="space-y-1">
+        {posts?.map((post) => (
+          <article
+            key={post.id}
+            className="group rounded-lg border bg-card p-6 transition-colors hover:bg-accent/50">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 space-y-1">
+                <Link
+                  href={`/post/${post.slug}`}
+                  className="text-xl font-semibold tracking-tight group-hover:underline group-hover:underline-offset-4">
+                  {post.title}
+                </Link>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>{post.author}</span>
+                  <span>&middot;</span>
+                  <time>{format(new Date(post.createdAt), "MMM d, yyyy")}</time>
+                </div>
+              </div>
+              <Badge variant="secondary" className="shrink-0 text-xs">
+                {format(new Date(post.createdAt), "MMM yyyy")}
+              </Badge>
+            </div>
+
+            {post.excerpt && (
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground line-clamp-2">
+                {post.excerpt}
+              </p>
+            )}
+
+            <div className="mt-4">
+              <Link
+                href={`/post/${post.slug}`}
+                className="text-sm font-medium text-foreground underline-offset-4 hover:underline">
+                Read more &rarr;
+              </Link>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
