@@ -9,15 +9,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ImageUpload } from "@/components/image-upload";
+import { LoginDialog } from "@/components/auth-dialog";
 import Link from "next/link";
 
 export default function NewPostPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [excerpt, setExcerpt] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const createPost = trpc.post.create.useMutation({
     onSuccess: (data) => {
@@ -25,13 +28,34 @@ export default function NewPostPage() {
     },
   });
 
+  if (authLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center py-20 text-center gap-4">
+        <p className="text-lg font-semibold">Sign in to write a post</p>
+        <p className="text-sm text-muted-foreground">
+          You need to be logged in to create a post.
+        </p>
+        <Button onClick={() => setLoginOpen(true)}>Sign in</Button>
+        <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
+      </div>
+    );
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createPost.mutate({
       title,
-      author: author || user?.displayName || user?.username || "Anonymous",
       content,
       excerpt: excerpt || undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
     });
   };
 
@@ -48,7 +72,11 @@ export default function NewPostPage() {
           Write a new post
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Share your thoughts with the world.
+          Posting as{" "}
+          <span className="font-medium text-foreground">
+            {user.displayName ?? user.username}
+          </span>
+          .
         </p>
       </div>
 
@@ -63,20 +91,6 @@ export default function NewPostPage() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter your post title"
             required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="author">Author</Label>
-          <Input
-            id="author"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder={
-              user
-                ? user.displayName || user.username
-                : "Your name (leave blank for Anonymous)"
-            }
           />
         </div>
 
@@ -106,6 +120,16 @@ export default function NewPostPage() {
             rows={14}
             className="resize-y"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label>
+            Images{" "}
+            <span className="text-muted-foreground font-normal">
+              (optional, up to 4)
+            </span>
+          </Label>
+          <ImageUpload value={imageUrls} onChange={setImageUrls} />
         </div>
 
         {createPost.error && (

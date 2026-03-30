@@ -62,7 +62,7 @@ export default function RootLayout({
             <footer className="border-t">
               <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-6 text-sm text-muted-foreground">
                 <p>&copy; {new Date().getFullYear()} OnlyBlog</p>
-                <p>Built with Next.js, tRPC &amp; Drizzle</p>
+                <p></p>
               </div>
             </footer>
           </AuthProvider>

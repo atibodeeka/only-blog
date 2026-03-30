@@ -5,6 +5,7 @@ import {
   timestamp,
   varchar,
   integer,
+  json,
 } from "drizzle-orm/pg-core";
 
 export const posts = pgTable("posts", {
@@ -14,6 +15,10 @@ export const posts = pgTable("posts", {
   content: text("content").notNull(),
   author: varchar("author", { length: 128 }).notNull().default("Anonymous"),
   excerpt: text("excerpt"),
+  imageUrls: json("image_urls").$type<string[]>(),
+  userId: integer("user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

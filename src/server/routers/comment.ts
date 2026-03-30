@@ -30,11 +30,20 @@ export const commentRouter = router({
     .input(
       z.object({
         postId: z.number(),
-        content: z.string().min(1).max(2000),
+        content: z.string().max(2000).default(""),
         parentId: z.number().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      if (
+        !input.content.trim() &&
+        (!input.imageUrls || input.imageUrls.length === 0)
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Comment must have text or at least one image",
+        });
+      }
       const [comment] = await db
         .insert(comments)
         .values({
